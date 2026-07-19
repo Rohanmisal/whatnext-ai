@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Share2 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PageWrapper from '../components/layout/PageWrapper'
 import SignInRequiredModal from '../components/SignInRequiredModal'
 import useAppStore from '../store/useAppStore'
 import { updateSessionStatus, updateStepProgress } from '../services/api'
 import { getPathProgress, isPathComplete, normalizeStepStatus } from '../lib/sessionProgress'
+import { formatPathSummary, shareOrCopyText } from '../utils/sharePath'
 
 const isServerSessionId = (id: string) => /^[0-9a-f-]{36}$/i.test(id)
 
@@ -16,6 +17,7 @@ export default function PathDetail() {
   const currentSession = useAppStore((state) => state.currentSession)
   const setCurrentSession = useAppStore((state) => state.setCurrentSession)
   const [signInModalOpen, setSignInModalOpen] = useState(false)
+  const [shareStatus, setShareStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle')
   const pathId = Number(params.id)
 
   const path = useMemo(
@@ -133,26 +135,68 @@ export default function PathDetail() {
     return (
       <PageWrapper>
         <main className="mx-auto min-h-[70vh] max-w-4xl px-6 pb-24 pt-28">
-          <p className="text-on-surface-variant">Path not found.</p>
+          <div className="rounded-[20px] border border-white/[0.08] bg-surface-container-low p-8 text-center">
+            <h1 className="font-display text-2xl font-semibold text-on-surface">Path not found</h1>
+            <p className="mx-auto mt-3 max-w-md text-sm text-on-surface-variant">
+              Open a session from My Paths to view path details and track steps.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/results')}
+                className="rounded-full bg-primary-container px-5 py-2.5 text-sm font-semibold text-[#1a0d06] transition hover:opacity-90"
+              >
+                Back to My Paths
+              </button>
+            </div>
+          </div>
         </main>
       </PageWrapper>
     )
   }
 
+  const handleSharePath = async () => {
+    const result = await shareOrCopyText(
+      formatPathSummary(currentSession, path),
+      `WhatNext AI — ${path.title}`
+    )
+    setShareStatus(result)
+    window.setTimeout(() => setShareStatus('idle'), 2200)
+  }
+
+  const shareLabel =
+    shareStatus === 'copied'
+      ? 'Copied!'
+      : shareStatus === 'shared'
+        ? 'Shared!'
+        : shareStatus === 'failed'
+          ? 'Couldn’t share'
+          : 'Share this path'
+
   return (
     <PageWrapper>
       <SignInRequiredModal open={signInModalOpen} onClose={() => setSignInModalOpen(false)} />
       <main className="mx-auto max-w-4xl px-6 pb-24 pt-24">
-        <div className="flex items-center gap-3 text-sm text-on-surface-variant">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-on-surface-variant">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/results')}
+              aria-label="Back to paths"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-surface-container-high text-on-surface-variant transition-all hover:border-white/20 hover:bg-surface-container-highest hover:text-on-surface active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <ArrowLeft size={18} aria-hidden />
+            </button>
+            <span className="text-primary">{path.title}</span>
+          </div>
           <button
             type="button"
-            onClick={() => navigate('/results')}
-            aria-label="Back to paths"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-surface-container-high text-on-surface-variant transition-all hover:border-white/20 hover:bg-surface-container-highest hover:text-on-surface active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            onClick={handleSharePath}
+            className="inline-flex items-center gap-2 rounded-lg border border-primary-container/30 bg-primary-container/10 px-3.5 py-2 text-xs font-semibold text-primary-container transition hover:bg-primary-container/15"
           >
-            <ArrowLeft size={18} aria-hidden />
+            <Share2 size={14} aria-hidden />
+            {shareLabel}
           </button>
-          <span className="text-primary">{path.title}</span>
         </div>
 
         {allStepsComplete && (

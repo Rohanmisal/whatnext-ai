@@ -1,4 +1,4 @@
-import { Bell, Compass, Route, Bookmark, MessageSquare, Menu, X } from 'lucide-react';
+import { Compass, Route, Bookmark, MessageSquare, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 
@@ -72,15 +72,6 @@ export function Header({
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          {/* Bell — desktop only */}
-          <button
-            title="Notifications"
-            aria-label="Notifications"
-            className="hidden md:flex text-slate-400 hover:bg-white/5 transition-all duration-300 p-2 rounded-full active:scale-95"
-          >
-            <Bell size={20} />
-          </button>
-
           {/* Profile avatar — desktop only */}
           <button
             type="button"
@@ -155,7 +146,7 @@ export function Header({
             </nav>
 
             {/* Divider + profile row */}
-            <div className="border-t border-white/[0.06] px-4 py-3 flex items-center justify-between">
+            <div className="border-t border-white/[0.06] px-4 py-3">
               <button
                 type="button"
                 onClick={() => {
@@ -168,13 +159,6 @@ export function Header({
                   {renderAvatar('w-full h-full')}
                 </span>
                 My Profile
-              </button>
-              <button
-                title="Notifications"
-                aria-label="Notifications"
-                className="p-2 rounded-full text-slate-400 hover:bg-white/5 transition-all"
-              >
-                <Bell size={18} />
               </button>
             </div>
           </motion.div>

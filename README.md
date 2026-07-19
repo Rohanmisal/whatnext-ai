@@ -10,6 +10,7 @@
 <p align="center">
   <a href="#features">Features</a> ·
   <a href="#how-it-works">How it works</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#tech-stack">Tech stack</a> ·
   <a href="#getting-started">Getting started</a>
 </p>
@@ -38,6 +39,7 @@ Each path includes numbered steps, estimated timelines, and the tools you need. 
 - **Plain-language guidance** — Messy life problems turned into clear, actionable steps
 - **Step tracking & history** — Save sessions, mark progress, and pick up where you left off
 - **Personal Navigator chat** — Ask follow-ups as you move through a path
+- **Share a path** — Copy or share a clean text summary of one path or all three
 - **Auth & guest mode** — Try without an account; sign in to keep history across devices
 - **Usage-aware backend** — Quotas and sessions powered by Supabase
 
@@ -48,6 +50,26 @@ Each path includes numbered steps, estimated timelines, and the tools you need. 
 1. **Describe your situation** — Everyday language is enough; no formal framework required  
 2. **Get three paths** — Easy / Medium / Advanced routes with steps, timelines, and tools  
 3. **Follow, track & ask** — Mark steps done, chat with Navigator, revisit anytime  
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/landing.jpg" alt="Landing page" width="48%" />
+  <img src="docs/images/two_questions.jpg" alt="Situation input form" width="48%" />
+</p>
+<p align="center">
+  <em>Landing · Two-question input</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/my_path.jpg" alt="My Paths Forward results" width="48%" />
+  <img src="docs/images/history.jpg" alt="Session history" width="48%" />
+</p>
+<p align="center">
+  <em>Three paths forward · Session history & progress</em>
+</p>
 
 ---
 
@@ -65,7 +87,7 @@ whatnext-ai/
 ├── src/          # React UI, routing, client services
 ├── server/       # Express API + AI providers
 ├── public/       # Static assets
-└── docs/         # README media
+└── docs/         # README media & screenshots
 ```
 
 ---
@@ -129,38 +151,6 @@ Or run separately: `npm run dev` (frontend) and `npm run dev:server` (API).
 | `npm run build` | Typecheck + production build |
 | `npm run preview` | Preview production build |
 | `npm run lint` | TypeScript check (`tsc --noEmit`) |
-
----
-
-## Screenshots
-
-<!-- Drop product screenshots into docs/ and uncomment:
-
-<p align="center">
-  <img src="docs/screenshot-landing.png" alt="Landing" width="48%" />
-  <img src="docs/screenshot-paths.png" alt="Paths forward" width="48%" />
-</p>
-<p align="center">
-  <img src="docs/screenshot-navigator.png" alt="Navigator chat" width="48%" />
-  <img src="docs/screenshot-progress.png" alt="Progress tracking" width="48%" />
-</p>
-
-Suggested shots: landing hero, three paths result, Navigator chat, path progress / history.
--->
-
-*Product screenshots coming soon — add PNGs under `docs/` and uncomment the block above.*
-
----
-
-## Contributing
-
-Issues and pull requests are welcome. For larger changes, open an issue first so we can align on direction.
-
----
-
-## License
-
-Private / unlicensed unless otherwise stated. Contact the maintainer before redistributing.
 
 ---
 
