@@ -5,6 +5,7 @@ import PageWrapper   from '../components/layout/PageWrapper'
 import useAppStore   from '../store/useAppStore'
 import { authService }  from '../services/auth'
 import { clearAllHistory, deleteAccount, fetchMe, updateProfile, uploadAvatar } from '../services/api'
+import { getInitials } from '../utils/helpers'
 
 // ---- Types -------------------------------------------------------
 
@@ -121,11 +122,6 @@ const badgeClass = (variant: 'green' | 'amber' | 'blue') => {
   }
 }
 
-const getInitials = (name: string | null, email: string): string => {
-  if (name && name.trim()) return name.trim()[0].toUpperCase()
-  return email[0].toUpperCase()
-}
-
 const btnBase =
   'cursor-pointer transition-all active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50'
 
@@ -171,7 +167,7 @@ function ProfileSkeleton() {
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user: authUser, clearAuth, isAuthLoading, clearLocalHistory } = useAppStore()
+  const { user: authUser, clearAuth, isAuthLoading, clearLocalHistory, setProfileIdentity } = useAppStore()
 
   const [data,       setData]      = useState<ProfileData | null>(null)
   const [isLoading,  setIsLoading] = useState(true)
@@ -211,6 +207,10 @@ export default function ProfilePage() {
         const normalized = normalizeProfileData(profileData)
         setData(normalized)
         setActiveLang(normalized.user.preferredLanguage || 'English')
+        setProfileIdentity({
+          displayName: normalized.user.displayName ?? authUser.name,
+          avatarUrl:   normalized.user.avatarUrl,
+        })
       })
       .catch(() => {
         if (cancelled) return
@@ -221,13 +221,17 @@ export default function ProfilePage() {
       })
 
     return () => { cancelled = true }
-  }, [authUser, isAuthLoading])
+  }, [authUser, isAuthLoading, setProfileIdentity])
 
   const reloadProfile = async () => {
     const profileData = await fetchMe()
     const normalized = normalizeProfileData(profileData)
     setData(normalized)
     setActiveLang(normalized.user.preferredLanguage || 'English')
+    setProfileIdentity({
+      displayName: normalized.user.displayName ?? authUser?.name ?? null,
+      avatarUrl:   normalized.user.avatarUrl,
+    })
   }
 
   const openEditModal = () => {

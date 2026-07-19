@@ -6,12 +6,14 @@ export function Header({
   activeTab,
   onTabChange,
   onProfileClick,
-  profileInitial = 'R',
+  profileInitial = '?',
+  profileAvatarUrl = null,
 }: {
   activeTab: string
   onTabChange: (tab: string) => void
   onProfileClick?: () => void
   profileInitial?: string
+  profileAvatarUrl?: string | null
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const tabs = ['Home', 'Pricing', 'My Paths', 'Explore', 'History'];
@@ -20,6 +22,17 @@ export function Header({
     onTabChange(tab);
     setMobileOpen(false);
   };
+
+  const renderAvatar = (sizeClass: string) =>
+    profileAvatarUrl ? (
+      <img
+        src={profileAvatarUrl}
+        alt=""
+        className={`${sizeClass} rounded-full object-cover`}
+      />
+    ) : (
+      <span className="font-display">{profileInitial}</span>
+    );
 
   return (
     <header className="bg-background/80 backdrop-blur-md border-b border-white/10 fixed top-0 w-full z-50">
@@ -74,9 +87,9 @@ export function Header({
             title="Profile"
             aria-label="Open profile"
             onClick={onProfileClick}
-            className="hidden md:flex w-[34px] h-[34px] rounded-full bg-gradient-to-br from-primary-container to-primary items-center justify-center text-[13px] font-semibold text-on-primary border-2 border-primary/30 hover:opacity-90 transition-all active:scale-95 font-display"
+            className="hidden md:flex w-[34px] h-[34px] overflow-hidden rounded-full bg-gradient-to-br from-primary-container to-primary items-center justify-center text-[13px] font-semibold text-on-primary border-2 border-primary/30 hover:opacity-90 transition-all active:scale-95"
           >
-            {profileInitial}
+            {renderAvatar('w-full h-full')}
           </button>
 
           {/* Hamburger — mobile only */}
@@ -151,8 +164,8 @@ export function Header({
                 }}
                 className="flex items-center gap-3 text-sm text-slate-400 hover:text-on-surface transition-colors"
               >
-                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-primary flex items-center justify-center text-[13px] font-semibold text-on-primary border-2 border-primary/30 font-display">
-                  {profileInitial}
+                <span className="w-8 h-8 overflow-hidden rounded-full bg-gradient-to-br from-primary-container to-primary flex items-center justify-center text-[13px] font-semibold text-on-primary border-2 border-primary/30">
+                  {renderAvatar('w-full h-full')}
                 </span>
                 My Profile
               </button>

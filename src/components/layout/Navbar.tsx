@@ -1,9 +1,49 @@
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Header } from '../Navigation'
+import useAppStore from '../../store/useAppStore'
+import { fetchMe } from '../../services/api'
+import { getInitials } from '../../utils/helpers'
 
 export default function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
+  const {
+    user,
+    accessToken,
+    profileDisplayName,
+    profileAvatarUrl,
+    setProfileIdentity,
+  } = useAppStore()
+
+  // Keep navbar identity in sync with the server profile (name + avatar).
+  useEffect(() => {
+    if (!user || !accessToken) {
+      setProfileIdentity({ displayName: null, avatarUrl: null })
+      return
+    }
+
+    let cancelled = false
+    fetchMe()
+      .then((data: { user?: { displayName?: string | null; avatarUrl?: string | null } }) => {
+        if (cancelled) return
+        setProfileIdentity({
+          displayName: data?.user?.displayName ?? user.name,
+          avatarUrl:   data?.user?.avatarUrl ?? null,
+        })
+      })
+      .catch(() => {
+        if (cancelled) return
+        setProfileIdentity({
+          displayName: user.name,
+          avatarUrl:   null,
+        })
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, user?.name, accessToken, setProfileIdentity])
 
   const activeTab = (() => {
     if (location.pathname === '/') return 'Home'
@@ -15,10 +55,16 @@ export default function Navbar() {
     return 'Home'
   })()
 
+  const displayName = profileDisplayName ?? user?.name ?? null
+  const profileInitial = getInitials(displayName, user?.email)
+  const avatarUrl = profileAvatarUrl ?? user?.avatarUrl ?? null
+
   return (
     <Header
       activeTab={activeTab}
-      onProfileClick={() => navigate('/profile')}
+      profileInitial={profileInitial}
+      profileAvatarUrl={avatarUrl}
+      onProfileClick={() => navigate(user ? '/profile' : '/sign-in')}
       onTabChange={(tab) => {
         if (tab === 'Home') navigate('/')
         if (tab === 'Pricing') navigate('/pricing')
