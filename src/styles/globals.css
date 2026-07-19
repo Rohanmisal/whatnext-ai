@@ -110,6 +110,25 @@ body {
   background: color-mix(in srgb, var(--color-primary-container) 55%, var(--color-outline));
 }
 
+/* Chat composer: keep scrollbar invisible at rest; thin dark thumb only when overflowing */
+.chat-input-field {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-outline) 50%, transparent) transparent;
+}
+
+.chat-input-field::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-input-field::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-input-field::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-outline) 45%, transparent);
+  border-radius: 999px;
+}
+
 .glass-card {
   @apply bg-[#1A2C40]/40 backdrop-blur-xl border border-primary-container/10;
 }

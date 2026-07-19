@@ -6,7 +6,7 @@ export function Header({
   activeTab,
   onTabChange,
   onProfileClick,
-  profileInitial = '?',
+  profileInitial = 'G',
   profileAvatarUrl = null,
 }: {
   activeTab: string
