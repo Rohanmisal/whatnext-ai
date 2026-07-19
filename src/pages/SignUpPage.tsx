@@ -1,13 +1,50 @@
-import { ArrowRight, LogIn, Loader2, MailCheck } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRight, LogIn, Loader2, MailCheck, AlertCircle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import AuthBrandMark from '../components/AuthBrandMark'
 import PasswordInput from '../components/PasswordInput'
 import { authService } from '../services/auth'
 import { updateProfile } from '../services/api'
 import useAppStore from '../store/useAppStore'
 import { normalizeEmail, validateEmail } from '../utils/email'
+
+function mapSignUpError(error: { message?: string; code?: string } | null | undefined): string {
+  const code = (error?.code || '').toLowerCase()
+  const msg = (error?.message || '').toLowerCase()
+
+  if (
+    code === 'email_address_invalid' ||
+    (msg.includes('email') && msg.includes('invalid'))
+  ) {
+    return 'That email address isn’t accepted. Please check it or try a different one.'
+  }
+  if (
+    msg.includes('already registered') ||
+    msg.includes('already exists') ||
+    msg.includes('unique') ||
+    code === 'user_already_exists'
+  ) {
+    return 'An account with this email already exists. Try signing in instead.'
+  }
+  if (msg.includes('password') || code.includes('password')) {
+    return 'Password must be at least 8 characters.'
+  }
+  if (msg.includes('rate') || code.includes('rate')) {
+    return 'Too many attempts. Please wait a moment and try again.'
+  }
+
+  return error?.message?.trim() || 'Sign-up failed. Please try again.'
+}
+
+function isEmailSignUpError(error: { message?: string; code?: string } | null | undefined): boolean {
+  const code = (error?.code || '').toLowerCase()
+  const msg = (error?.message || '').toLowerCase()
+  return (
+    code === 'email_address_invalid' ||
+    (msg.includes('email') && msg.includes('invalid'))
+  )
+}
 
 // ─── Google SVG icon ──────────────────────────────────────────────────────────
 function GoogleIcon() {
@@ -79,12 +116,13 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null)
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const errorBannerRef = useRef<HTMLDivElement>(null)
 
   const emailCheck = validateEmail(email)
   const passwordsMatch = password === confirmPassword
   const canSubmit =
     firstName.trim().length > 0 &&
-    lastName.trim().length > 0 &&
     emailCheck.valid &&
     password.trim().length >= 8 &&
     confirmPassword.trim().length >= 8 &&
@@ -93,7 +131,28 @@ export default function SignUpPage() {
   const clearError = () => {
     setError(null)
     setEmailError(null)
+    setToast(null)
   }
+
+  const showSignUpFailure = (raw: { message?: string; code?: string } | null | undefined) => {
+    const friendly = mapSignUpError(raw)
+    setError(friendly)
+    setToast(friendly)
+    if (isEmailSignUpError(raw)) {
+      setEmailError(friendly)
+    }
+  }
+
+  useEffect(() => {
+    if (!error) return
+    errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [error])
+
+  useEffect(() => {
+    if (!toast) return
+    const id = window.setTimeout(() => setToast(null), 5200)
+    return () => window.clearTimeout(id)
+  }, [toast])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -101,81 +160,87 @@ export default function SignUpPage() {
 
     const validation = validateEmail(email)
     if (!validation.valid) {
-      setEmailError(validation.message || 'Please enter a valid email address.')
+      const msg = validation.message || 'Please enter a valid email address.'
+      setEmailError(msg)
+      setError(msg)
+      setToast(msg)
       return
     }
 
     if (!passwordsMatch) {
-      setError('Passwords do not match. Please check and try again.')
+      const msg = 'Passwords do not match. Please check and try again.'
+      setError(msg)
+      setToast(msg)
       return
     }
 
     setIsLoading(true)
     setError(null)
     setEmailError(null)
+    setToast(null)
 
-    const fullName = `${firstName.trim()} ${lastName.trim()}`
+    const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ')
     const cleanEmail = normalizeEmail(email)
 
-    const { user, session, error: authError, isNewUser } = await authService.signUp(
-      cleanEmail,
-      password,
-      fullName,
-      { lifeStage: stage, preferredLanguage }
-    )
-
-    if (authError) {
-      setIsLoading(false)
-      const msg = authError.message.toLowerCase()
-      if (
-        msg.includes('already registered') ||
-        msg.includes('already exists') ||
-        msg.includes('unique')
-      ) {
-        setError('An account with this email already exists. Try signing in instead.')
-      } else if (msg.includes('password')) {
-        setError('Password must be at least 6 characters.')
-      } else {
-        setError(authError.message)
-      }
-      return
-    }
-
-    // Supabase omits identities when the email already exists — no confirmation email is sent.
-    if (!isNewUser) {
-      setIsLoading(false)
-      setError('An account with this email already exists. Try signing in instead.')
-      return
-    }
-
-    if (!session) {
-      setIsLoading(false)
-      setEmailSent(true)
-      return
-    }
-
-    if (user) {
-      setUser(user)
-      setAccessToken(session.access_token)
-    }
-
     try {
-      await updateProfile({ lifeStage: stage, preferredLanguage })
-    } catch {
-      // Non-critical — profile metadata can be updated later
-    }
+      const { user, session, error: authError, isNewUser } = await authService.signUp(
+        cleanEmail,
+        password,
+        fullName,
+        { lifeStage: stage, preferredLanguage }
+      )
 
-    setIsLoading(false)
-    navigate('/')
+      if (authError) {
+        setIsLoading(false)
+        showSignUpFailure(authError)
+        return
+      }
+
+      // Supabase omits identities when the email already exists — no confirmation email is sent.
+      if (!isNewUser) {
+        setIsLoading(false)
+        const msg = 'An account with this email already exists. Try signing in instead.'
+        setError(msg)
+        setToast(msg)
+        return
+      }
+
+      if (!session) {
+        setIsLoading(false)
+        setEmailSent(true)
+        return
+      }
+
+      if (user) {
+        setUser(user)
+        setAccessToken(session.access_token)
+      }
+
+      try {
+        await updateProfile({ lifeStage: stage, preferredLanguage })
+      } catch {
+        // Non-critical — profile metadata can be updated later
+      }
+
+      setIsLoading(false)
+      navigate('/')
+    } catch (err) {
+      setIsLoading(false)
+      const fallback =
+        err instanceof Error ? err.message : 'Sign-up failed. Please try again.'
+      setError(fallback)
+      setToast(fallback)
+    }
   }
 
   const onGoogleSignUp = async () => {
     setIsGoogleLoading(true)
     setError(null)
+    setToast(null)
     const { error: authError } = await authService.signInWithGoogle()
     if (authError) {
       setIsGoogleLoading(false)
-      setError(authError.message || 'Google sign-up failed. Please try again.')
+      showSignUpFailure(authError)
     }
   }
 
@@ -236,6 +301,32 @@ export default function SignUpPage() {
       {/* Ambient glow */}
       <div className="pointer-events-none absolute -top-52 left-1/2 -translate-x-1/2 w-[700px] h-[600px] rounded-full bg-[radial-gradient(ellipse,rgba(244,162,97,0.06)_0%,transparent_65%)]" />
 
+      {/* Toast — stays visible even when the form is scrolled to the submit button */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key="signup-toast"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22 }}
+            role="alert"
+            className="fixed left-1/2 top-5 z-[60] flex w-[min(92vw,420px)] -translate-x-1/2 items-start gap-2.5 rounded-xl border border-red-500/30 bg-[#1a1210] px-4 py-3 text-sm text-red-200 shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+          >
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-300" aria-hidden />
+            <p className="flex-1 leading-relaxed">{toast}</p>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={() => setToast(null)}
+              className="shrink-0 text-red-300/70 transition hover:text-red-200"
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.main
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -276,8 +367,13 @@ export default function SignUpPage() {
         </div>
 
         {error && (
-          <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-3.5 py-2.5 text-xs text-red-300 leading-relaxed">
-            {error}
+          <div
+            ref={errorBannerRef}
+            role="alert"
+            className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-500/25 bg-red-500/[0.1] px-3.5 py-3 text-xs text-red-200 leading-relaxed"
+          >
+            <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-red-300" aria-hidden />
+            <span>{error}</span>
           </div>
         )}
 
@@ -291,10 +387,11 @@ export default function SignUpPage() {
                 type="text"
                 placeholder="Rahul"
                 autoComplete="given-name"
+                required
                 className={inputCls}
               />
             </Field>
-            <Field label="Last name">
+            <Field label="Last name (optional)">
               <input
                 value={lastName}
                 onChange={(e) => { setLastName(e.target.value); clearError() }}
