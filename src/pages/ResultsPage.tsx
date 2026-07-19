@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Share2 } from 'lucide-react'
 import PageWrapper from '../components/layout/PageWrapper'
 import SignInRequiredModal from '../components/SignInRequiredModal'
 import useAppStore from '../store/useAppStore'
 import { getPathProgress, isPathComplete, normalizeStepStatus } from '../lib/sessionProgress'
+import { formatPathSummary, shareOrCopyText } from '../utils/sharePath'
 
 export default function ResultsPage() {
   const navigate = useNavigate()
@@ -11,6 +13,7 @@ export default function ResultsPage() {
   const currentSession = useAppStore((state) => state.currentSession)
   const setCurrentSession = useAppStore((state) => state.setCurrentSession)
   const [signInModalOpen, setSignInModalOpen] = useState(false)
+  const [shareStatus, setShareStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle')
 
   const openChat = (pathId: number) => {
     if (!authUser) {
@@ -21,17 +24,49 @@ export default function ResultsPage() {
     navigate(`/chat/${pathId}`)
   }
 
+  const handleShareAll = async () => {
+    if (!currentSession) return
+    const result = await shareOrCopyText(
+      formatPathSummary(currentSession),
+      'WhatNext AI — My Paths'
+    )
+    setShareStatus(result)
+    window.setTimeout(() => setShareStatus('idle'), 2200)
+  }
+
   if (!currentSession) {
     return (
       <PageWrapper>
         <main className="mx-auto min-h-[70vh] max-w-4xl px-6 pb-24 pt-28">
-          <p className="text-on-surface-variant">No active paths yet. Submit your situation to generate your plan.</p>
+          <div className="rounded-[20px] border border-white/[0.08] bg-surface-container-low p-8 text-center">
+            <h1 className="font-display text-2xl font-semibold text-on-surface">No active paths yet</h1>
+            <p className="mx-auto mt-3 max-w-md text-sm text-on-surface-variant">
+              Describe a situation to generate three paths forward.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/input')}
+                className="rounded-full bg-primary-container px-5 py-2.5 text-sm font-semibold text-[#1a0d06] transition hover:opacity-90"
+              >
+                Start an analysis
+              </button>
+            </div>
+          </div>
         </main>
       </PageWrapper>
     )
   }
 
   const sessionComplete = currentSession.status === 'completed'
+  const shareLabel =
+    shareStatus === 'copied'
+      ? 'Copied!'
+      : shareStatus === 'shared'
+        ? 'Shared!'
+        : shareStatus === 'failed'
+          ? 'Couldn’t share'
+          : 'Share paths'
 
   return (
     <PageWrapper>
@@ -51,8 +86,12 @@ export default function ResultsPage() {
           <p className="mx-auto mt-3 max-w-2xl text-xs text-outline-variant">
             Open a path and tap each step number to track your progress.
           </p>
-          <div className="mt-6 flex justify-center gap-3">
-            <button onClick={() => navigate('/history')} className="rounded-lg bg-surface-container-high px-4 py-2 text-sm font-semibold text-on-surface-variant">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/history')}
+              className="rounded-lg bg-surface-container-high px-4 py-2 text-sm font-semibold text-on-surface-variant"
+            >
               History
             </button>
             <button
@@ -61,6 +100,14 @@ export default function ResultsPage() {
               className="cursor-pointer rounded-lg bg-surface-container-high px-4 py-2 text-sm font-semibold text-on-surface-variant transition-colors hover:bg-surface-container-highest hover:text-on-surface"
             >
               Chat for Context
+            </button>
+            <button
+              type="button"
+              onClick={handleShareAll}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-primary-container/30 bg-primary-container/10 px-4 py-2 text-sm font-semibold text-primary-container transition-colors hover:bg-primary-container/15"
+            >
+              <Share2 size={15} aria-hidden />
+              {shareLabel}
             </button>
           </div>
         </header>
