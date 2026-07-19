@@ -3,15 +3,24 @@ import { persist } from 'zustand/middleware'
 import { AppState } from '../types'
 import type { AuthUser } from '../services/auth'
 
-interface AuthState {
-  user:           AuthUser | null
-  accessToken:    string | null
-  isAuthLoading:  boolean
-  setUser:        (user: AuthUser | null) => void
-  setAccessToken: (token: string | null) => void
-  setAuthLoading: (loading: boolean) => void
-  clearAuth:      () => void
+interface ProfileIdentity {
+  displayName: string | null
+  avatarUrl:   string | null
 }
+
+interface AuthState {
+  user:               AuthUser | null
+  accessToken:        string | null
+  isAuthLoading:      boolean
+  profileDisplayName: string | null
+  profileAvatarUrl:   string | null
+  setUser:            (user: AuthUser | null) => void
+  setAccessToken:     (token: string | null) => void
+  setAuthLoading:     (loading: boolean) => void
+  setProfileIdentity: (identity: ProfileIdentity) => void
+  clearAuth:          () => void
+}
+
 
 type StoreState = AppState & AuthState
 
@@ -40,18 +49,27 @@ const useAppStore = create<StoreState>()(
         })),
 
       // ---- Auth state ----
-      user:           null,
-      accessToken:    null,
-      isAuthLoading:  true,   // starts true — resolves on app init
-      setUser:        (user)  => set({ user }),
-      setAccessToken: (token) => set({ accessToken: token }),
-      setAuthLoading: (loading) => set({ isAuthLoading: loading }),
-      clearAuth:      () =>
+      user:               null,
+      accessToken:        null,
+      isAuthLoading:      true,   // starts true — resolves on app init
+      profileDisplayName: null,
+      profileAvatarUrl:   null,
+      setUser:            (user)  => set({ user }),
+      setAccessToken:     (token) => set({ accessToken: token }),
+      setAuthLoading:     (loading) => set({ isAuthLoading: loading }),
+      setProfileIdentity: ({ displayName, avatarUrl }) =>
         set({
-          user:            null,
-          accessToken:     null,
-          currentSession:  null,
-          history:         [],
+          profileDisplayName: displayName,
+          profileAvatarUrl:   avatarUrl,
+        }),
+      clearAuth: () =>
+        set({
+          user:               null,
+          accessToken:        null,
+          profileDisplayName: null,
+          profileAvatarUrl:   null,
+          currentSession:     null,
+          history:            [],
         }),
     }),
     {

@@ -9,15 +9,17 @@ import { normalizeEmail } from '../utils/email'
 import type { User, Session } from '@supabase/supabase-js'
 
 export interface AuthUser {
-  id:    string
-  email: string
-  name:  string | null
+  id:        string
+  email:     string
+  name:      string | null
+  avatarUrl: string | null
 }
 
 const toAuthUser = (user: User): AuthUser => ({
-  id:    user.id,
-  email: user.email || '',
-  name:  user.user_metadata?.full_name || user.user_metadata?.name || null,
+  id:        user.id,
+  email:     user.email || '',
+  name:      user.user_metadata?.full_name || user.user_metadata?.name || null,
+  avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
 })
 
 let cachedAccessToken: string | null = null
