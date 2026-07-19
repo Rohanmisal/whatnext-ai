@@ -56,7 +56,8 @@ export default function Navbar() {
   })()
 
   const displayName = profileDisplayName ?? user?.name ?? null
-  const profileInitial = getInitials(displayName, user?.email)
+  // Guests: show "G" instead of "?" so the avatar reads as Guest mode
+  const profileInitial = user ? getInitials(displayName, user.email) : 'G'
   const avatarUrl = profileAvatarUrl ?? user?.avatarUrl ?? null
 
   return (

@@ -54,7 +54,10 @@ export default function NavigatorChat() {
     const el = chatInputRef.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+    const needed = el.scrollHeight
+    el.style.height = `${Math.min(needed, 160)}px`
+    // Hide scrollbar until content actually exceeds max height
+    el.style.overflowY = needed > 160 ? 'auto' : 'hidden'
   }
 
   useLayoutEffect(() => {
@@ -432,7 +435,7 @@ export default function NavigatorChat() {
                         chatFormRef.current?.requestSubmit()
                       }
                     }}
-                    className="min-h-[44px] max-h-[160px] min-w-0 flex-1 resize-none overflow-y-auto rounded-2xl border border-white/[0.1] bg-surface-container px-4 py-2.5 text-[14px] leading-relaxed text-on-surface outline-none transition placeholder:text-outline-variant focus:border-primary-container/30"
+                    className="chat-input-field min-h-[44px] max-h-[160px] min-w-0 flex-1 resize-none overflow-hidden rounded-2xl border border-white/[0.1] bg-surface-container px-4 py-2.5 text-[14px] leading-relaxed text-on-surface outline-none transition placeholder:text-outline-variant focus:border-primary-container/30"
                     placeholder="Ask anything about this path..."
                   />
                   <button
